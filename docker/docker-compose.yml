@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+  postgres:
+    container_name: gorm_db
+    image: postgres:15
+    ports:
+      - "5432:5432"
+    volumes:
+      - type: bind
+        source: ./db
+        target: /var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: gorm_db
+      TZ: Asia/Tokyo
