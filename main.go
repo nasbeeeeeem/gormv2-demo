@@ -11,22 +11,22 @@ type User struct {
 	ID         uint        `gorm:"primaryKey"`
 	Name       string      `gorm:"not null"`
 	Email      string      `gorm:"not null;unique"`
-	GroupUsers []GroupUser `gorm:"foreignKey:UserID;references:ID"`
-	Events     []Event     `gorm:"foreignKey:CreatedBy;references:ID"`
+	GroupUsers []GroupUser `gorm:"foreignKey:UserID"`
+	// Events     []Event     `gorm:"foreignKey:CreatedBy"`
 }
 
 type Group struct {
 	ID         uint        `gorm:"primaryKey"`
 	Name       string      `gorm:"not null"`
-	GroupUsers []GroupUser `gorm:"foreignKey:GroupID;references:ID"`
-	Events     []Event     `gorm:"foreignKey:GroupID;references:ID"`
+	GroupUsers []GroupUser `gorm:"foreignKey:GroupID"`
+	// Events     []Event     `gorm:"foreignKey:GroupID"`
 }
 
 type GroupUser struct {
-	UserID  uint `gorm:"primaryKey"`
-	GroupID uint `gorm:"primaryKey"`
-	// EventsUserID  []Event `gorm:"foreignKey:CreatedBy;references:ID"`
-	// EventsGroupID []Event `gorm:"foreignKey:GroupID;references:ID"`
+	UserID        uint    `gorm:"unique"`
+	GroupID       uint    `gorm:"unique"`
+	EventsUserID  []Event `gorm:"foreignKey:CreatedBy;references:UserID"` // CreatedBy列の外部キー
+	EventsGroupID []Event `gorm:"foreignKey:GroupID;references:GroupID"`  // GroupID列の外部キー
 }
 
 type Event struct {
@@ -34,6 +34,8 @@ type Event struct {
 	Name      string `gorm:"not null"`
 	CreatedBy uint
 	GroupID   uint
+	// Group     Group `gorm:"foreignKey:GroupID"`   // GroupID列の外部キー
+	// User      User  `gorm:"foreignKey:CreatedBy"` // CreatedBy列の外部キー
 }
 
 func main() {
@@ -57,37 +59,35 @@ func main() {
 	}()
 
 	// dbのマイグレーション
-	db.AutoMigrate(&User{}, &Group{}, &GroupUser{}, &Event{})
-	// db.Migrator().CreateConstraint(&GroupUser{}, "User")
-	// db.Migrator().CreateConstraint(&GroupUser{}, "Group")
-	// db.Migrator().CreateConstraint(&Event{}, "GroupUser")
-	fmt.Print("Migration successfully")
+	db.AutoMigrate(&User{}, &Group{}, &GroupUser{})
+	db.Migrator().CreateConstraint(&GroupUser{}, "User")
+	db.Migrator().CreateConstraint(&GroupUser{}, "Group")
+	db.AutoMigrate(&Event{})
+	db.Migrator().CreateConstraint(&Event{}, "GroupUser")
 
 	// サンプルデータの登録
 	user := User{
 		Name:  "yakiu",
 		Email: "yakiu@gmail.com",
 	}
+	db.Create(&user)
 
 	group := Group{
 		Name: "SampleGroup",
 	}
+	db.Create(&group)
 
 	groupUser := GroupUser{
 		UserID:  user.ID,
 		GroupID: group.ID,
 	}
+	db.Create(&groupUser)
 
 	event := Event{
 		Name:      "SampleEvent",
 		CreatedBy: groupUser.UserID,
 		GroupID:   groupUser.GroupID,
 	}
-
-	// レコードの登録
-	db.Create(&user)
-	db.Create(&group)
-	db.Create(&groupUser)
 	db.Create(&event)
 
 	fmt.Print("Sample data created successfully")
