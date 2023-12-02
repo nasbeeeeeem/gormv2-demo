@@ -61,5 +61,34 @@ func main() {
 	// db.Migrator().CreateConstraint(&GroupUser{}, "User")
 	// db.Migrator().CreateConstraint(&GroupUser{}, "Group")
 	// db.Migrator().CreateConstraint(&Event{}, "GroupUser")
-	fmt.Print("migrate successfully")
+	fmt.Print("Migration successfully")
+
+	// サンプルデータの登録
+	user := User{
+		Name:  "yakiu",
+		Email: "yakiu@gmail.com",
+	}
+
+	group := Group{
+		Name: "SampleGroup",
+	}
+
+	groupUser := GroupUser{
+		UserID:  user.ID,
+		GroupID: group.ID,
+	}
+
+	event := Event{
+		Name:      "SampleEvent",
+		CreatedBy: groupUser.UserID,
+		GroupID:   groupUser.GroupID,
+	}
+
+	// レコードの登録
+	db.Create(&user)
+	db.Create(&group)
+	db.Create(&groupUser)
+	db.Create(&event)
+
+	fmt.Print("Sample data created successfully")
 }
