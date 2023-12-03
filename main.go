@@ -8,18 +8,18 @@ import (
 )
 
 type User struct {
-	ID         uint        `gorm:"primaryKey"`
-	Name       string      `gorm:"not null"`
-	Email      string      `gorm:"not null;unique"`
-	GroupUsers []GroupUser `gorm:"foreignKey:UserID"`
-	// Events     []Event     `gorm:"foreignKey:CreatedBy"`
+	ID             uint        `gorm:"primaryKey"`
+	Name           string      `gorm:"not null"`
+	Email          string      `gorm:"not null;unique"`
+	GroupUsers     []GroupUser `gorm:"foreignKey:UserID"`
+	PaymentsPaidBy []Payment   `gorm:"foreignKey:PaidBy"`
+	PaymentsPaidTo []Payment   `gorm:"foreignKey:PaidTo"`
 }
 
 type Group struct {
 	ID         uint        `gorm:"primaryKey"`
 	Name       string      `gorm:"not null"`
 	GroupUsers []GroupUser `gorm:"foreignKey:GroupID"`
-	// Events     []Event     `gorm:"foreignKey:GroupID"`
 }
 
 type GroupUser struct {
@@ -30,12 +30,19 @@ type GroupUser struct {
 }
 
 type Event struct {
-	ID        uint   `gorm:"primaryKey"`
-	Name      string `gorm:"not null"`
-	CreatedBy uint
-	GroupID   uint
-	// Group     Group `gorm:"foreignKey:GroupID"`   // GroupID列の外部キー
-	// User      User  `gorm:"foreignKey:CreatedBy"` // CreatedBy列の外部キー
+	ID              uint   `gorm:"primaryKey"`
+	Name            string `gorm:"not null"`
+	CreatedBy       uint
+	GroupID         uint
+	PaymentsEventID []Payment `gorm:"foreignKey:EventID"`
+}
+
+type Payment struct {
+	gorm.Model
+	EventID uint
+	PaidBy  uint
+	PaidTo  uint
+	Amount  uint
 }
 
 func main() {
@@ -59,11 +66,10 @@ func main() {
 	}()
 
 	// dbのマイグレーション
-	db.AutoMigrate(&User{}, &Group{}, &GroupUser{})
-	db.Migrator().CreateConstraint(&GroupUser{}, "User")
-	db.Migrator().CreateConstraint(&GroupUser{}, "Group")
-	db.AutoMigrate(&Event{})
-	db.Migrator().CreateConstraint(&Event{}, "GroupUser")
+	db.AutoMigrate(&User{}, &Group{}, &GroupUser{}, &Event{}, &Payment{})
+	// db.Migrator().CreateConstraint(&GroupUser{}, "User")
+	// db.Migrator().CreateConstraint(&GroupUser{}, "Group")
+	// db.Migrator().CreateConstraint(&Event{}, "GroupUser")
 
 	// サンプルデータの登録
 	user := User{
@@ -89,6 +95,14 @@ func main() {
 		GroupID:   groupUser.GroupID,
 	}
 	db.Create(&event)
+
+	payment := Payment{
+		EventID: event.ID,
+		PaidBy:  user.ID,
+		PaidTo:  user.ID,
+		Amount:  2000,
+	}
+	db.Create(&payment)
 
 	fmt.Print("Sample data created successfully")
 }
